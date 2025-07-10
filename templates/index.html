@@ -118,6 +118,11 @@
                 padding: 8px 2px;
             }
         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -144,6 +149,8 @@
         </select><br><br>
         <hr id="spouse-divider" style="display:none; margin: 18px 0; border: 0; border-top: 2px dashed #bdbdbd;">
         <div id="spouse-fields" style="display:none;">
+                        <label for="spouse-file" id="spouse-file-label" style="display:none;">Spouse 106 Document (PDF):</label><br>
+            <input type="file" id="spouse-file" name="spouse_file" accept="application/pdf" style="display:none;"><br><br>
             <label for="spouse-dob-month">Spouse Birth Month:</label><br>
             <input type="text" id="spouse-dob-month" name="spouse-dob-month" placeholder="MM"><br><br>
             <label for="spouse-dob-year">Spouse Birth Year:</label><br>
@@ -156,6 +163,10 @@
         </div>
         <button type="submit">Submit</button>
         <div class="error" id="error-msg"></div>
+        <div id="loader" style="display:none;text-align:center;margin-top:10px;">
+            <span style="display:inline-block;width:32px;height:32px;border:4px solid #2563eb;border-top:4px solid #e0e7ef;border-radius:50%;animation:spin 1s linear infinite;"></span>
+            <div style="margin-top:8px;color:#2563eb;font-weight:500;">Processing...</div>
+        </div>
     </form>
     <table id="result-table">
         <thead>
@@ -201,15 +212,23 @@
     document.getElementById('family-status').addEventListener('change', function() {
         const spouseFields = document.getElementById('spouse-fields');
         const spouseDivider = document.getElementById('spouse-divider');
+        const spouseFile = document.getElementById('spouse-file');
+        const spouseFileLabel = document.getElementById('spouse-file-label');
         if (this.value === 'nasui') {
             spouseFields.style.display = '';
             spouseDivider.style.display = '';
+            spouseFile.style.display = '';
+            spouseFileLabel.style.display = '';
+            spouseFile.setAttribute('required', 'required');
             document.getElementById('spouse-gender').setAttribute('required', 'required');
             document.getElementById('spouse-dob-month').setAttribute('required', 'required');
             document.getElementById('spouse-dob-year').setAttribute('required', 'required');
         } else {
             spouseFields.style.display = 'none';
             spouseDivider.style.display = 'none';
+            spouseFile.style.display = 'none';
+            spouseFileLabel.style.display = 'none';
+            spouseFile.removeAttribute('required');
             document.getElementById('spouse-gender').removeAttribute('required');
             document.getElementById('spouse-dob-month').removeAttribute('required');
             document.getElementById('spouse-dob-year').removeAttribute('required');
@@ -221,6 +240,7 @@
         errorMsg.textContent = '';
         resultTable.style.display = 'none';
         resultBody.innerHTML = '';
+        document.getElementById('loader').style.display = '';
         const fileInput = document.getElementById('pdf-file');
         const taxYear = document.getElementById('tax-year').value;
         const dobMonth = document.getElementById('dob-month').value;
@@ -242,6 +262,10 @@
             formData.append('spouse_gender', document.getElementById('spouse-gender').value);
             formData.append('spouse_dob_month', document.getElementById('spouse-dob-month').value);
             formData.append('spouse_dob_year', document.getElementById('spouse-dob-year').value);
+            const spouseFileInput = document.getElementById('spouse-file');
+            if (spouseFileInput.files.length > 0) {
+                formData.append('spouse_file', spouseFileInput.files[0]);
+            }
         }
         try {
             const response = await fetch('/check_tax_refund', {
@@ -274,6 +298,8 @@
             resultTable.style.display = 'table';
         } catch (err) {
             errorMsg.textContent = err.message;
+        } finally {
+            document.getElementById('loader').style.display = 'none';
         }
     });
 </script>
