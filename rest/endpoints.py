@@ -55,6 +55,7 @@ async def check_tax_refund(
                 spouse_tmp_path = spouse_tmp.name
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
+
         personal_details['spouse'] = {
             'gender': spouse_gender,
             'dob': {'month': spouse_dob_month, 'year': spouse_dob_year}

@@ -85,9 +85,9 @@ def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> dict:
                 code_values[code] = value.replace(',', '')
 
     new_codes = {}
-    # deletes keys with -1
+    # deletes keys with -1 or 0
     for code in code_values:
-        if code_values[code] != "-1":
+        if code_values[code] != "-1" and code_values[code] != "0":
             new_codes[code] = code_values[code]
 
     return new_codes
