@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from tax_authority_api.const import MAIN_URL, YEAR_PAGE, TAX_CODES_FOR_SPOUSE
+from tax_authority_api.const import MAIN_URL, YEAR_PAGE, TAX_CODES_FOR_SPOUSE, FamilyStatus
 from tax_authority_api.schemes import TaxResult
 from tax_authority_api.utils import parse_tax_results
 
@@ -34,10 +34,19 @@ class TaxSimulator:
             'ctl00$ctl00$ContentUsersPage$ChildContent1$mish': personal_details['family_status'],
             'ctl00$ctl00$ContentUsersPage$ChildContent1$sex': personal_details['gender'],
             'ctl00$ctl00$ContentUsersPage$ChildContent1$okHidden': 'ok',
+            'ctl00$ctl00$ContentUsersPage$ChildContent1$chk020': 'on',
             f'ctl00$ctl00$ContentUsersPage$ChildContent1$CNTCurrYear': f"20{self.year_suffix}",
             f'ctl00$ctl00$ContentUsersPage$ChildContent1$CookieNameFake': f"{self.year_suffix}_Fake",
             f'ctl00$ctl00$ContentUsersPage$ChildContent1$CookieName': f"{self.year_suffix}_doch",
         })
+        # Handle spouse details if applicable
+        if personal_details['family_status'] == FamilyStatus.MARRIED:
+            form_data.update({
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$chk021': 'on',
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledambz': personal_details['spouse']['dob']['month'],
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledabz': personal_details['spouse']['dob']['year'],
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$sexbz': f"{personal_details['spouse']['gender']}bz"
+            })
         # Add salary data
         for code, value in report_106_codes.items():
             field_name = f'ctl00$ctl00$ContentUsersPage$ChildContent1$txt{code}'
@@ -50,10 +59,20 @@ class TaxSimulator:
             raise Exception(f"Failed to submit form: {response.status_code}")
         return response.text
 
-    def calculate_refund(self, personal_details, report_106_codes) -> TaxResult | None:
-        if personal_details['family_status'] == 'ravak':
+    def calculate_refund(self,
+                         personal_details: dict,
+                         report_106_codes: dict,
+                         spouse_report_106_codes: dict) -> TaxResult | None:
+        if personal_details['family_status'] == FamilyStatus.SINGLE:
             report_106_codes = {code: value for code, value in report_106_codes.items() if
                                    code not in TAX_CODES_FOR_SPOUSE}
+        elif personal_details['family_status'] == FamilyStatus.MARRIED:
+            spouse_report_106_codes = {code: value for code, value in spouse_report_106_codes.items() if
+                                   code in TAX_CODES_FOR_SPOUSE}
+            # merging spouse codes if applicable
+            if personal_details['family_status'] == FamilyStatus.MARRIED:
+                report_106_codes.update(spouse_report_106_codes)
+
         data = self.prepare_form(personal_details, report_106_codes)
         response = self.submit(data)
         return parse_tax_results(response)

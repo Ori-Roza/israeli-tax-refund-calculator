@@ -73,10 +73,24 @@ HEBREW_TO_ENGLISH = {
     "הכנסה חייבת": "taxable_income",
     "מס ברוטו": "gross_tax",
     "זיכוי תושב": "resident_credit",
+    "זיכוי אישה": "woman_credit",
+    "זיכוי 45.א": "credit_45a",
     "סה''כ  זיכויים": "total_credits",
     "מס מגיע": "final_tax_due",
     "ניכויים במקור": "withholding_tax",
     "מס לאחר ניכוי במקור": "tax_after_withholding",
+}
+
+SPECIAL_ATTRIBUTES = {
+    "זיכוי תושב": "resident_credit",
     "זיכוי אישה": "woman_credit",
     "זיכוי 45.א": "credit_45a",
 }
+
+class FamilyStatus:
+    SINGLE = "ravak"
+    MARRIED = "nasui"
+
+    @classmethod
+    def choices(cls):
+        return [cls.RAVAK, cls.NASUI]

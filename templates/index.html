@@ -98,6 +98,12 @@
             background: #f1f5f9;
         }
 
+        .special-attribute-row td {
+            background: #fffbe6 !important;
+            color: #b45309;
+            font-weight: 600;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 18px 6px 18px 6px;
@@ -121,7 +127,7 @@
         <label for="pdf-file">Upload 106 Document (PDF):</label><br>
         <input type="file" id="pdf-file" name="pdf-file" accept="application/pdf" required><br><br>
         <label for="tax-year">Tax Year:</label><br>
-        <input type="text" id="tax-year" name="tax-year" placeholder="e.g. 23" required><br><br>
+        <input type="text" id="tax-year" name="tax-year" placeholder="e.g. 2023" required><br><br>
         <label for="dob-month">Birth Month:</label><br>
         <input type="text" id="dob-month" name="dob-month" placeholder="MM" required><br><br>
         <label for="dob-year">Birth Year:</label><br>
@@ -130,36 +136,85 @@
         <select id="family-status" name="family-status" required>
             <option value="ravak">Single</option>
             <option value="nasui">Married</option>
-            <option value="garush">Divorced</option>
-            <option value="alman">Widowed</option>
         </select><br><br>
         <label for="gender">Gender:</label><br>
         <select id="gender" name="gender" required>
             <option value="male">Male</option>
             <option value="female">Female</option>
-            <option value="other">Other</option>
         </select><br><br>
+        <hr id="spouse-divider" style="display:none; margin: 18px 0; border: 0; border-top: 2px dashed #bdbdbd;">
+        <div id="spouse-fields" style="display:none;">
+            <label for="spouse-dob-month">Spouse Birth Month:</label><br>
+            <input type="text" id="spouse-dob-month" name="spouse-dob-month" placeholder="MM"><br><br>
+            <label for="spouse-dob-year">Spouse Birth Year:</label><br>
+            <input type="text" id="spouse-dob-year" name="spouse-dob-year" placeholder="YYYY"><br><br>
+            <label for="spouse-gender">Spouse Gender:</label><br>
+            <select id="spouse-gender" name="spouse-gender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select><br><br>
+        </div>
         <button type="submit">Submit</button>
         <div class="error" id="error-msg"></div>
     </form>
     <table id="result-table">
         <thead>
         <tr>
-            <th>Component</th>
-            <th>Partner Value</th>
-            <th>Spouse Value</th>
-            <th>Total Value</th>
+            <th>בן/בת זוג</th>
+            <th>בן זוג רשום</th>
+            <th>סך הכל</th>
+            <th>רכיב</th>
         </tr>
         </thead>
         <tbody id="result-body">
         </tbody>
     </table>
+    <style>
+        .special-attribute-row td {
+            background: #fffbe6 !important;
+            color: #b45309;
+            font-weight: 600;
+        }
+    </style>
 </div>
 <script>
     const form = document.getElementById('upload-form');
     const resultTable = document.getElementById('result-table');
     const resultBody = document.getElementById('result-body');
     const errorMsg = document.getElementById('error-msg');
+
+    const HEBREW_TO_ENGLISH = [
+        { he: "סה\"כ הכנסות", en: "total_income" },
+        { he: "סה''ק  ניכויים", en: "total_deductions" },
+        { he: "הכנסה חייבת", en: "taxable_income" },
+        { he: "מס ברוטו", en: "gross_tax" },
+        { he: "זיכוי תושב", en: "resident_credit", special: true },
+        { he: "זיכוי אישה", en: "woman_credit", special: true },
+        { he: "זיכוי 45.א", en: "credit_45a", special: true },
+        { he: "סה''כ  זיכויים", en: "total_credits" },
+        { he: "מס מגיע", en: "final_tax_due" },
+        { he: "ניכויים במקור", en: "withholding_tax" },
+        { he: "<b>מס לאחר ניכוי במקור</b>", en: "tax_after_withholding" },
+    ];
+
+    // Show/hide spouse fields based on family status
+    document.getElementById('family-status').addEventListener('change', function() {
+        const spouseFields = document.getElementById('spouse-fields');
+        const spouseDivider = document.getElementById('spouse-divider');
+        if (this.value === 'nasui') {
+            spouseFields.style.display = '';
+            spouseDivider.style.display = '';
+            document.getElementById('spouse-gender').setAttribute('required', 'required');
+            document.getElementById('spouse-dob-month').setAttribute('required', 'required');
+            document.getElementById('spouse-dob-year').setAttribute('required', 'required');
+        } else {
+            spouseFields.style.display = 'none';
+            spouseDivider.style.display = 'none';
+            document.getElementById('spouse-gender').removeAttribute('required');
+            document.getElementById('spouse-dob-month').removeAttribute('required');
+            document.getElementById('spouse-dob-year').removeAttribute('required');
+        }
+    });
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -183,6 +238,11 @@
         formData.append('dob_year', dobYear);
         formData.append('family_status', familyStatus);
         formData.append('gender', gender);
+        if (familyStatus === 'nasui') {
+            formData.append('spouse_gender', document.getElementById('spouse-gender').value);
+            formData.append('spouse_dob_month', document.getElementById('spouse-dob-month').value);
+            formData.append('spouse_dob_year', document.getElementById('spouse-dob-year').value);
+        }
         try {
             const response = await fetch('/check_tax_refund', {
                 method: 'POST',
@@ -197,12 +257,18 @@
                 errorMsg.textContent = 'No results found.';
                 return;
             }
-            for (const [component, values] of Object.entries(data.result)) {
+            // Clear previous results
+            resultBody.innerHTML = '';
+            // Render rows in the order of HEBREW_TO_ENGLISH
+            for (const item of HEBREW_TO_ENGLISH) {
+                const key = item.en;
+                const values = data.result[key];
                 let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? values.partner_value : '-';
                 let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? values.spouse_value : '-';
                 let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? values.total_value : '-';
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${component}</td><td>${partnerValue}</td><td>${spouseValue}</td><td>${totalValue}</td>`;
+                if (item.special) row.classList.add('special-attribute-row');
+                row.innerHTML = `<td>${partnerValue}</td><td>${spouseValue}</td><td>${totalValue}</td><td>${item.he}</td>`;
                 resultBody.appendChild(row);
             }
             resultTable.style.display = 'table';
