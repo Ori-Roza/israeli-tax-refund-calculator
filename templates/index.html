@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Israeli Tax Refund Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            padding: 36px 32px 32px 32px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2a4365;
+            margin-bottom: 28px;
+            font-size: 2.1rem;
+            letter-spacing: 1px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+            margin-bottom: 18px;
+            width: 100%;
+            padding: 8px 0;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #1e40af 0%, #0ea5e9 100%);
+        }
+
+        .error {
+            color: #e11d48;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        #result-table {
+            display: none;
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 32px;
+            background: #f9fafb;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        th, td {
+            border: none;
+            padding: 13px 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        tr:nth-child(even) td {
+            background: #e0e7ef;
+        }
+
+        tr:nth-child(odd) td {
+            background: #f1f5f9;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px 6px 18px 6px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            th, td {
+                font-size: 0.95rem;
+                padding: 8px 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Israeli Tax Refund Calculator</h1>
+    <form id="upload-form">
+        <label for="pdf-file">Upload 106 Document (PDF):</label><br>
+        <input type="file" id="pdf-file" name="pdf-file" accept="application/pdf" required><br><br>
+        <label for="tax-year">Tax Year:</label><br>
+        <input type="text" id="tax-year" name="tax-year" placeholder="e.g. 23" required><br><br>
+        <label for="dob-month">Birth Month:</label><br>
+        <input type="text" id="dob-month" name="dob-month" placeholder="MM" required><br><br>
+        <label for="dob-year">Birth Year:</label><br>
+        <input type="text" id="dob-year" name="dob-year" placeholder="YYYY" required><br><br>
+        <label for="family-status">Family Status:</label><br>
+        <select id="family-status" name="family-status" required>
+            <option value="ravak">Single</option>
+            <option value="nasui">Married</option>
+            <option value="garush">Divorced</option>
+            <option value="alman">Widowed</option>
+        </select><br><br>
+        <label for="gender">Gender:</label><br>
+        <select id="gender" name="gender" required>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select><br><br>
+        <button type="submit">Submit</button>
+        <div class="error" id="error-msg"></div>
+    </form>
+    <table id="result-table">
+        <thead>
+        <tr>
+            <th>Component</th>
+            <th>Partner Value</th>
+            <th>Spouse Value</th>
+            <th>Total Value</th>
+        </tr>
+        </thead>
+        <tbody id="result-body">
+        </tbody>
+    </table>
+</div>
+<script>
+    const form = document.getElementById('upload-form');
+    const resultTable = document.getElementById('result-table');
+    const resultBody = document.getElementById('result-body');
+    const errorMsg = document.getElementById('error-msg');
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errorMsg.textContent = '';
+        resultTable.style.display = 'none';
+        resultBody.innerHTML = '';
+        const fileInput = document.getElementById('pdf-file');
+        const taxYear = document.getElementById('tax-year').value;
+        const dobMonth = document.getElementById('dob-month').value;
+        const dobYear = document.getElementById('dob-year').value;
+        const familyStatus = document.getElementById('family-status').value;
+        const gender = document.getElementById('gender').value;
+        if (!fileInput.files.length) {
+            errorMsg.textContent = 'Please select a PDF file.';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('tax_year', taxYear);
+        formData.append('dob_month', dobMonth);
+        formData.append('dob_year', dobYear);
+        formData.append('family_status', familyStatus);
+        formData.append('gender', gender);
+        try {
+            const response = await fetch('/check_tax_refund', {
+                method: 'POST',
+                body: formData
+            });
+            if (!response.ok) {
+                console.log(response.text())
+                throw new Error('Failed to process the document.');
+            }
+            const data = await response.json();
+            if (!data || !data.result) {
+                errorMsg.textContent = 'No results found.';
+                return;
+            }
+            for (const [component, values] of Object.entries(data.result)) {
+                let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? values.partner_value : '-';
+                let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? values.spouse_value : '-';
+                let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? values.total_value : '-';
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${component}</td><td>${partnerValue}</td><td>${spouseValue}</td><td>${totalValue}</td>`;
+                resultBody.appendChild(row);
+            }
+            resultTable.style.display = 'table';
+        } catch (err) {
+            errorMsg.textContent = err.message;
+        }
+    });
+</script>
+</body>
+</html>
