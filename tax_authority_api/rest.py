@@ -1,8 +1,10 @@
+from typing import Optional
+
 import requests
 from bs4 import BeautifulSoup
 
 from tax_authority_api.const import MAIN_URL, YEAR_PAGE, TAX_CODES_FOR_SPOUSE, FamilyStatus
-from tax_authority_api.schemes import TaxResult
+from tax_authority_api.schemes import TaxResult, PersonalDetails, Report106Codes, SpouseReport106Codes
 from tax_authority_api.utils import parse_tax_results
 
 
@@ -18,7 +20,7 @@ class TaxSimulator:
             'Referer': self.main_url,
         })
 
-    def prepare_form(self, personal_details, report_106_codes):
+    def prepare_form(self, personal_details: PersonalDetails, report_106_codes: Report106Codes):
         # Initialize session and get form
         self.session.get(self.main_url)
         res = self.session.get(self.year_page)
@@ -29,10 +31,10 @@ class TaxSimulator:
         }
         # Fill in personal details
         form_data.update({
-            'ctl00$ctl00$ContentUsersPage$ChildContent1$ledambzr': personal_details['dob']['month'],
-            'ctl00$ctl00$ContentUsersPage$ChildContent1$ledabzr': personal_details['dob']['year'],
-            'ctl00$ctl00$ContentUsersPage$ChildContent1$mish': personal_details['family_status'],
-            'ctl00$ctl00$ContentUsersPage$ChildContent1$sex': personal_details['gender'],
+            'ctl00$ctl00$ContentUsersPage$ChildContent1$ledambzr': personal_details.dob['month'],
+            'ctl00$ctl00$ContentUsersPage$ChildContent1$ledabzr': personal_details.dob['year'],
+            'ctl00$ctl00$ContentUsersPage$ChildContent1$mish': personal_details.family_status,
+            'ctl00$ctl00$ContentUsersPage$ChildContent1$sex': personal_details.gender,
             'ctl00$ctl00$ContentUsersPage$ChildContent1$okHidden': 'ok',
             'ctl00$ctl00$ContentUsersPage$ChildContent1$chk020': 'on',
             f'ctl00$ctl00$ContentUsersPage$ChildContent1$CNTCurrYear': f"20{self.year_suffix}",
@@ -40,15 +42,15 @@ class TaxSimulator:
             f'ctl00$ctl00$ContentUsersPage$ChildContent1$CookieName': f"{self.year_suffix}_doch",
         })
         # Handle spouse details if applicable
-        if personal_details['family_status'] == FamilyStatus.MARRIED:
+        if personal_details.family_status == FamilyStatus.MARRIED and personal_details.spouse:
             form_data.update({
                 'ctl00$ctl00$ContentUsersPage$ChildContent1$chk021': 'on',
-                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledambz': personal_details['spouse']['dob']['month'],
-                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledabz': personal_details['spouse']['dob']['year'],
-                'ctl00$ctl00$ContentUsersPage$ChildContent1$sexbz': f"{personal_details['spouse']['gender']}bz"
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledambz': personal_details.spouse['dob']['month'],
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$ledabz': personal_details.spouse['dob']['year'],
+                'ctl00$ctl00$ContentUsersPage$ChildContent1$sexbz': f"{personal_details.spouse['gender']}bz"
             })
         # Add salary data
-        for code, value in report_106_codes.items():
+        for code, value in report_106_codes.codes.items():
             field_name = f'ctl00$ctl00$ContentUsersPage$ChildContent1$txt{code}'
             form_data[field_name] = value
         return form_data
@@ -60,18 +62,18 @@ class TaxSimulator:
         return response.text
 
     def calculate_refund(self,
-                         personal_details: dict,
-                         report_106_codes: dict,
-                         spouse_report_106_codes: dict) -> TaxResult | None:
-        if personal_details['family_status'] == FamilyStatus.SINGLE:
-            report_106_codes = {code: value for code, value in report_106_codes.items() if
+                         personal_details: PersonalDetails,
+                         report_106_codes: Report106Codes,
+                         spouse_report_106_codes: Optional[SpouseReport106Codes]) -> TaxResult | None:
+        if personal_details.family_status == FamilyStatus.SINGLE:
+            report_106_codes.codes = {code: value for code, value in report_106_codes.codes.items() if
                                    code not in TAX_CODES_FOR_SPOUSE}
-        elif personal_details['family_status'] == FamilyStatus.MARRIED:
-            spouse_report_106_codes = {code: value for code, value in spouse_report_106_codes.items() if
+        elif personal_details.family_status == FamilyStatus.MARRIED:
+            spouse_report_106_codes.codes = {code: value for code, value in spouse_report_106_codes.codes.items() if
                                    code in TAX_CODES_FOR_SPOUSE}
             # merging spouse codes if applicable
-            if personal_details['family_status'] == FamilyStatus.MARRIED:
-                report_106_codes.update(spouse_report_106_codes)
+            if personal_details.family_status == FamilyStatus.MARRIED:
+                report_106_codes.codes.update(spouse_report_106_codes.codes)
 
         data = self.prepare_form(personal_details, report_106_codes)
         response = self.submit(data)

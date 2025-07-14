@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class TaxComponent(BaseModel):
@@ -22,3 +22,17 @@ class TaxResult(BaseModel):
     woman_credit: Optional[TaxComponent] = None
 
 
+class PersonalDetails(BaseModel):
+    dob: Dict[str, int]  # {'month': int, 'year': int}
+    family_status: Optional[Any] = None   # Should be FamilyStatus, but keeping Any for flexibility
+    gender: str
+    spouse: Optional[Dict[str, Any]] = None  # {'dob': {'month': int, 'year': int}, 'gender': str}
+
+
+
+class Report106Codes(BaseModel):
+    codes: Dict[str, Any]  # code: value
+
+
+class SpouseReport106Codes(BaseModel):
+    codes: Dict[str, Any]  # code: value

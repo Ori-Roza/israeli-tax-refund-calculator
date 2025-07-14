@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 
 from tax_authority_api.const import TAX_CODES
+from tax_authority_api.schemes import Report106Codes
 
 
 def preprocess_image(pil_image):
@@ -12,7 +13,7 @@ def preprocess_image(pil_image):
     return Image.fromarray(thresh)
 
 
-def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> dict:
+def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> Report106Codes:
     code_values = {}
 
     for line in ocr_text.splitlines():
@@ -90,4 +91,4 @@ def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> dict:
         if code_values[code] != "-1" and code_values[code] != "0":
             new_codes[code] = code_values[code]
 
-    return new_codes
+    return Report106Codes(codes=new_codes)

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import File, UploadFile, HTTPException, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -6,6 +8,8 @@ from rest import app
 from tax_authority_api.const import FamilyStatus
 from tax_authority_api.rest import TaxSimulator
 import tempfile
+
+from tax_authority_api.schemes import PersonalDetails, Report106Codes
 from tax_documents_parser import parse_106_pdf
 
 
@@ -38,13 +42,13 @@ async def check_tax_refund(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to save file: {e}")
 
-    personal_details = {
+    personal_details = PersonalDetails(**{
         'dob': {'month': dob_month, 'year': dob_year},
         'family_status': family_status,
         'gender': gender,
-    }
-    report_106_codes = parse_106_pdf(tmp_path)
-    spouse_report_106_codes = None
+    })
+    report_106_codes: Optional[Report106Codes] = parse_106_pdf(tmp_path)
+    spouse_report_106_codes: Optional[Report106Codes] = None
     if family_status == FamilyStatus.MARRIED:
         if not spouse_file:
             raise HTTPException(status_code=400, detail="Spouse 106 document is required for married status.")
@@ -56,10 +60,10 @@ async def check_tax_refund(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
 
-        personal_details['spouse'] = {
+        personal_details['spouse'] = PersonalDetails(**{
             'gender': spouse_gender,
             'dob': {'month': spouse_dob_month, 'year': spouse_dob_year}
-        }
+        })
         spouse_report_106_codes = parse_106_pdf(spouse_tmp_path)
         # Merge or handle both report_106_codes and spouse_report_106_codes as needed
         # For now, just add to personal_details for downstream logic

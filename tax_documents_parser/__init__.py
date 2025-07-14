@@ -2,10 +2,11 @@ from pdf2image import convert_from_path
 from pytesseract import pytesseract
 
 from tax_authority_api.const import TAX_CODES_GROUPS
+from tax_authority_api.schemes import Report106Codes
 from tax_documents_parser.utils import extract_values_from_text
 
 
-def parse_106_pdf(pdf_path):
+def parse_106_pdf(pdf_path: str) -> Report106Codes:
     images = convert_from_path(pdf_path)
     full_text = ""
 
