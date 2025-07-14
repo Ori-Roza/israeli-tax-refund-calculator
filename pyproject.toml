@@ -1,0 +1,24 @@
+[project]
+name = "israeli-tax-refund-calculator"
+version = "0.1.0"
+description = "A FastAPI server for estimating Israeli income tax refunds."
+authors = [{ name = "Ori Roza", email = "ori75660@gmail.com" }]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+fastapi = "^0.111.0"
+uvicorn = "^0.30.1"
+pytesseract = "^0.3.10"
+pydantic = "^2.8.0"
+pdf2image = "^1.17.0"
+opencv-python = "^4.9.0.80"
+numpy = "^1.26.4"
+pillow = "^10.3.0"
+beautifulsoup4 = "^4.12.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
