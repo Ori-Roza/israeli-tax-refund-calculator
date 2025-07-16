@@ -173,10 +173,10 @@
     <table id="result-table">
         <thead>
         <tr>
-            <th>בן/בת זוג</th>
-            <th>בן זוג רשום</th>
-            <th>סך הכל</th>
             <th>רכיב</th>
+            <th>סך הכל</th>
+            <th>בן זוג רשום</th>
+            <th>בן/בת זוג</th>
         </tr>
         </thead>
         <tbody id="result-body">
@@ -244,23 +244,23 @@
         resultBody.innerHTML = '';
         document.getElementById('loader').style.display = '';
         const fileInput = document.getElementById('pdf-file');
-        const taxYear = document.getElementById('tax-year').value;
-        const dobMonth = document.getElementById('dob-month').value;
-        const dobYear = document.getElementById('dob-year').value;
-        const familyStatus = document.getElementById('family-status').value;
-        const gender = document.getElementById('gender').value;
+        const taxYear = document.getElementById('tax-year');
+        const dobMonth = document.getElementById('dob-month');
+        const dobYear = document.getElementById('dob-year');
+        const familyStatus = document.getElementById('family-status');
+        const gender = document.getElementById('gender');
         if (!fileInput.files.length) {
             errorMsg.textContent = 'Please select a PDF file.';
             return;
         }
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
-        formData.append('tax_year', taxYear);
-        formData.append('dob_month', dobMonth);
-        formData.append('dob_year', dobYear);
-        formData.append('family_status', familyStatus);
-        formData.append('gender', gender);
-        if (familyStatus === 'nasui') {
+        formData.append('tax_year', taxYear.value);
+        formData.append('dob_month', dobMonth.value);
+        formData.append('dob_year', dobYear.value);
+        formData.append('family_status', familyStatus.value);
+        formData.append('gender', gender.value);
+        if (familyStatus.value === 'nasui') {
             formData.append('spouse_gender', document.getElementById('spouse-gender').value);
             formData.append('spouse_dob_month', document.getElementById('spouse-dob-month').value);
             formData.append('spouse_dob_year', document.getElementById('spouse-dob-year').value);
@@ -289,12 +289,20 @@
             for (const item of HEBREW_TO_ENGLISH) {
                 const key = item.en;
                 const values = data.result[key];
-                let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? values.partner_value : '-';
-                let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? values.spouse_value : '-';
-                let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? values.total_value : '-';
+                function formatValue(val) {
+                    if (typeof val === 'number') {
+                        // Use LTR embedding for numbers to ensure minus sign is on the left
+                        return val < 0 ? '\u202A-' + Math.abs(val) + '\u202C' : '\u202A' + val + '\u202C';
+                    }
+                    return val;
+                }
+                let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? formatValue(values.partner_value) : '-';
+                let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? formatValue(values.spouse_value) : '-';
+                let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? formatValue(values.total_value) : '-';
                 const row = document.createElement('tr');
                 if (item.special) row.classList.add('special-attribute-row');
-                row.innerHTML = `<td>${partnerValue}</td><td>${spouseValue}</td><td>${totalValue}</td><td>${item.he}</td>`;
+                // Put 'רכיב' (item.he) as the first column on the right
+                row.innerHTML = `<td>${item.he}</td><td>${totalValue}</td><td>${partnerValue}</td><td>${spouseValue}</td>`;
                 resultBody.appendChild(row);
             }
             resultTable.style.display = 'table';

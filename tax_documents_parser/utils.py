@@ -13,6 +13,13 @@ def preprocess_image(pil_image):
     return Image.fromarray(thresh)
 
 
+def is_code_exists(code: str, codes: list[list[str]]) -> bool:
+    for code_group in codes:
+        if code in code_group:
+            return True
+    return False
+
+
 def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> Report106Codes:
     code_values = {}
 
@@ -86,9 +93,11 @@ def extract_values_from_text(ocr_text: str, codes: list[list[str]]) -> Report106
                 code_values[code] = value.replace(',', '')
 
     new_codes = {}
-    # deletes keys with -1 or 0
+    # deletes keys with -1 or 0 and values less than 1000
     for code in code_values:
-        if code_values[code] != "-1" and code_values[code] != "0":
+        if (code_values[code] != "-1" and
+                code_values[code] != "0" and
+                int(code_values[code]) > 999):
             new_codes[code] = code_values[code]
 
     return Report106Codes(codes=new_codes)
