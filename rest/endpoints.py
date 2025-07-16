@@ -42,11 +42,13 @@ async def check_tax_refund(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to save file: {e}")
 
-    personal_details = PersonalDetails(**{
+    personal_details_dict = {
         'dob': {'month': dob_month, 'year': dob_year},
         'family_status': family_status,
         'gender': gender,
-    })
+    }
+
+    personal_details = PersonalDetails(**personal_details_dict)
     report_106_codes: Optional[Report106Codes] = parse_106_pdf(tmp_path)
     spouse_report_106_codes: Optional[Report106Codes] = None
     if family_status == FamilyStatus.MARRIED:
@@ -60,10 +62,11 @@ async def check_tax_refund(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
 
-        personal_details['spouse'] = PersonalDetails(**{
+        personal_details_dict['spouse'] = {
             'gender': spouse_gender,
             'dob': {'month': spouse_dob_month, 'year': spouse_dob_year}
-        })
+        }
+        personal_details = PersonalDetails(**personal_details_dict)
         spouse_report_106_codes = parse_106_pdf(spouse_tmp_path)
         # Merge or handle both report_106_codes and spouse_report_106_codes as needed
         # For now, just add to personal_details for downstream logic
