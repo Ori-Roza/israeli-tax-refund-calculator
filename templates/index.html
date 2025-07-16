@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Israeli Tax Refund Calculator</title>
+    <title>מחשבון החזר מס ישראלי</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -19,6 +19,8 @@
             border-radius: 18px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
             padding: 36px 32px 32px 32px;
+            direction: rtl;
+            text-align: right;
         }
 
         h1 {
@@ -127,54 +129,54 @@
 </head>
 <body>
 <div class="container">
-    <h1>Israeli Tax Refund Calculator</h1>
+    <h1>מחשבון החזר מס ישראלי</h1>
     <form id="upload-form">
-        <label for="pdf-file">Upload 106 Document (PDF):</label><br>
+        <label for="pdf-file">העלה טופס 106 (PDF):</label><br>
         <input type="file" id="pdf-file" name="pdf-file" accept="application/pdf" required><br><br>
-        <label for="tax-year">Tax Year:</label><br>
-        <input type="text" id="tax-year" name="tax-year" placeholder="e.g. 2023" required><br><br>
-        <label for="dob-month">Birth Month:</label><br>
-        <input type="text" id="dob-month" name="dob-month" placeholder="MM" required><br><br>
-        <label for="dob-year">Birth Year:</label><br>
-        <input type="text" id="dob-year" name="dob-year" placeholder="YYYY" required><br><br>
-        <label for="family-status">Family Status:</label><br>
+        <label for="tax-year">שנת מס:</label><br>
+        <input type="text" id="tax-year" name="tax-year" placeholder="למשל 2023" required><br><br>
+        <label for="dob-month">חודש לידה:</label><br>
+        <input type="text" id="dob-month" name="dob-month" placeholder="חודש" required><br><br>
+        <label for="dob-year">שנת לידה:</label><br>
+        <input type="text" id="dob-year" name="dob-year" placeholder="שנה" required><br><br>
+        <label for="family-status">מצב משפחתי בזמן הדו״ח:</label><br>
         <select id="family-status" name="family-status" required>
-            <option value="ravak">Single</option>
-            <option value="nasui">Married</option>
+            <option value="ravak">רווק/ה</option>
+            <option value="nasui">נשוי/אה</option>
         </select><br><br>
-        <label for="gender">Gender:</label><br>
+        <label for="gender">מגדר:</label><br>
         <select id="gender" name="gender" required>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="male">זכר</option>
+            <option value="female">נקבה</option>
         </select><br><br>
         <hr id="spouse-divider" style="display:none; margin: 18px 0; border: 0; border-top: 2px dashed #bdbdbd;">
         <div id="spouse-fields" style="display:none;">
-                        <label for="spouse-file" id="spouse-file-label" style="display:none;">Spouse 106 Document (PDF):</label><br>
+            <label for="spouse-file" id="spouse-file-label" style="display:none;">טופס 106 של בן/בת הזוג (PDF):</label><br>
             <input type="file" id="spouse-file" name="spouse_file" accept="application/pdf" style="display:none;"><br><br>
-            <label for="spouse-dob-month">Spouse Birth Month:</label><br>
-            <input type="text" id="spouse-dob-month" name="spouse-dob-month" placeholder="MM"><br><br>
-            <label for="spouse-dob-year">Spouse Birth Year:</label><br>
-            <input type="text" id="spouse-dob-year" name="spouse-dob-year" placeholder="YYYY"><br><br>
-            <label for="spouse-gender">Spouse Gender:</label><br>
+            <label for="spouse-dob-month">חודש לידה של בן/בת הזוג:</label><br>
+            <input type="text" id="spouse-dob-month" name="spouse-dob-month" placeholder="חודש"><br><br>
+            <label for="spouse-dob-year">שנת לידה של בן/בת הזוג:</label><br>
+            <input type="text" id="spouse-dob-year" name="spouse-dob-year" placeholder="שנה"><br><br>
+            <label for="spouse-gender">מגדר בן/בת הזוג:</label><br>
             <select id="spouse-gender" name="spouse-gender">
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="male">זכר</option>
+                <option value="female">נקבה</option>
             </select><br><br>
         </div>
-        <button type="submit">Submit</button>
+        <button type="submit">שלח</button>
         <div class="error" id="error-msg"></div>
         <div id="loader" style="display:none;text-align:center;margin-top:10px;">
             <span style="display:inline-block;width:32px;height:32px;border:4px solid #2563eb;border-top:4px solid #e0e7ef;border-radius:50%;animation:spin 1s linear infinite;"></span>
-            <div style="margin-top:8px;color:#2563eb;font-weight:500;">Processing...</div>
+            <div style="margin-top:8px;color:#2563eb;font-weight:500;">מעבד...</div>
         </div>
     </form>
     <table id="result-table">
         <thead>
         <tr>
-            <th>בן/בת זוג</th>
-            <th>בן זוג רשום</th>
-            <th>סך הכל</th>
             <th>רכיב</th>
+            <th>סך הכל</th>
+            <th>בן זוג רשום</th>
+            <th>בן/בת זוג</th>
         </tr>
         </thead>
         <tbody id="result-body">
@@ -242,23 +244,23 @@
         resultBody.innerHTML = '';
         document.getElementById('loader').style.display = '';
         const fileInput = document.getElementById('pdf-file');
-        const taxYear = document.getElementById('tax-year').value;
-        const dobMonth = document.getElementById('dob-month').value;
-        const dobYear = document.getElementById('dob-year').value;
-        const familyStatus = document.getElementById('family-status').value;
-        const gender = document.getElementById('gender').value;
+        const taxYear = document.getElementById('tax-year');
+        const dobMonth = document.getElementById('dob-month');
+        const dobYear = document.getElementById('dob-year');
+        const familyStatus = document.getElementById('family-status');
+        const gender = document.getElementById('gender');
         if (!fileInput.files.length) {
             errorMsg.textContent = 'Please select a PDF file.';
             return;
         }
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
-        formData.append('tax_year', taxYear);
-        formData.append('dob_month', dobMonth);
-        formData.append('dob_year', dobYear);
-        formData.append('family_status', familyStatus);
-        formData.append('gender', gender);
-        if (familyStatus === 'nasui') {
+        formData.append('tax_year', taxYear.value);
+        formData.append('dob_month', dobMonth.value);
+        formData.append('dob_year', dobYear.value);
+        formData.append('family_status', familyStatus.value);
+        formData.append('gender', gender.value);
+        if (familyStatus.value === 'nasui') {
             formData.append('spouse_gender', document.getElementById('spouse-gender').value);
             formData.append('spouse_dob_month', document.getElementById('spouse-dob-month').value);
             formData.append('spouse_dob_year', document.getElementById('spouse-dob-year').value);
@@ -287,12 +289,20 @@
             for (const item of HEBREW_TO_ENGLISH) {
                 const key = item.en;
                 const values = data.result[key];
-                let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? values.partner_value : '-';
-                let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? values.spouse_value : '-';
-                let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? values.total_value : '-';
+                function formatValue(val) {
+                    if (typeof val === 'number') {
+                        // Use LTR embedding for numbers to ensure minus sign is on the left
+                        return val < 0 ? '\u202A-' + Math.abs(val) + '\u202C' : '\u202A' + val + '\u202C';
+                    }
+                    return val;
+                }
+                let partnerValue = values && 'partner_value' in values && values.partner_value !== null && values.partner_value !== undefined ? formatValue(values.partner_value) : '-';
+                let spouseValue = values && 'spouse_value' in values && values.spouse_value !== null && values.spouse_value !== undefined ? formatValue(values.spouse_value) : '-';
+                let totalValue = values && 'total_value' in values && values.total_value !== null && values.total_value !== undefined ? formatValue(values.total_value) : '-';
                 const row = document.createElement('tr');
                 if (item.special) row.classList.add('special-attribute-row');
-                row.innerHTML = `<td>${partnerValue}</td><td>${spouseValue}</td><td>${totalValue}</td><td>${item.he}</td>`;
+                // Put 'רכיב' (item.he) as the first column on the right
+                row.innerHTML = `<td>${item.he}</td><td>${totalValue}</td><td>${partnerValue}</td><td>${spouseValue}</td>`;
                 resultBody.appendChild(row);
             }
             resultTable.style.display = 'table';
