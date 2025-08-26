@@ -1,14 +1,17 @@
 import re
+from loguru import logger
 
 from tax_authority_api.const import TAX_CODES
 from tax_authority_api.schemes import Report106Codes
 
 
 def preprocess_image(pil_image):
+    logger.debug("Starting image preprocessing for OCR")
     # to grayscale
     gray = pil_image.convert("L")
     # apply fixed threshold -> binary (0 or 255) but keep mode "L"
     bw = gray.point(lambda p: 255 if p > 180 else 0, mode="L")
+    logger.debug("Image converted to grayscale and binary threshold applied")
     return bw
 
 

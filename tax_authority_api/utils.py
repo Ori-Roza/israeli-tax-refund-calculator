@@ -35,3 +35,4 @@ def parse_tax_results(text: str) -> TaxResult | None:
                     "total_value": parse_number(total)
                 }
     return TaxResult(**result)
+
