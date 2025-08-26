@@ -1,7 +1,4 @@
 import re
-import cv2
-import numpy as np
-from PIL import Image
 
 from tax_authority_api.const import TAX_CODES
 from tax_authority_api.schemes import Report106Codes
