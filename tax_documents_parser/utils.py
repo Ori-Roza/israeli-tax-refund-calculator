@@ -1,16 +1,15 @@
 import re
-import cv2
-import numpy as np
-from PIL import Image
 
 from tax_authority_api.const import TAX_CODES
 from tax_authority_api.schemes import Report106Codes
 
 
 def preprocess_image(pil_image):
-    img = np.array(pil_image.convert('L'))
-    _, thresh = cv2.threshold(img, 180, 255, cv2.THRESH_BINARY)
-    return Image.fromarray(thresh)
+    # to grayscale
+    gray = pil_image.convert("L")
+    # apply fixed threshold -> binary (0 or 255) but keep mode "L"
+    bw = gray.point(lambda p: 255 if p > 180 else 0, mode="L")
+    return bw
 
 
 def is_code_exists(code: str, codes: list[list[str]]) -> bool:
