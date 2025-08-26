@@ -1,6 +1,4 @@
 from typing import Optional
-import time
-import os
 
 from fastapi import File, UploadFile, HTTPException, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -57,32 +55,37 @@ async def check_tax_refund(
         'gender': gender,
     }
 
-    personal_details = PersonalDetails(**personal_details_dict)
-    report_106_codes: Optional[Report106Codes] = parse_106_pdf(tmp_path)
-    spouse_report_106_codes: Optional[Report106Codes] = None
-    if family_status == FamilyStatus.MARRIED:
-        if not spouse_file:
-            logger.debug(f"No spouse report for {personal_details}")
-            print(f"No spouse report for {personal_details}")
-            raise HTTPException(status_code=400, detail="Spouse 106 document is required for married status.")
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as spouse_tmp:
-                spouse_content = await spouse_file.read()
-                spouse_tmp.write(spouse_content)
-                spouse_tmp_path = spouse_tmp.name
-        except Exception as e:
-            logger.debug(e)
-            print(e)
-            raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
-
-        personal_details_dict['spouse'] = {
-            'gender': spouse_gender,
-            'dob': {'month': spouse_dob_month, 'year': spouse_dob_year}
-        }
+    try:
         personal_details = PersonalDetails(**personal_details_dict)
-        spouse_report_106_codes = parse_106_pdf(spouse_tmp_path)
-        # Merge or handle both report_106_codes and spouse_report_106_codes as needed
-        # For now, just add to personal_details for downstream logic
+        report_106_codes: Optional[Report106Codes] = parse_106_pdf(tmp_path)
+        spouse_report_106_codes: Optional[Report106Codes] = None
+        if family_status == FamilyStatus.MARRIED:
+            if not spouse_file:
+                logger.debug(f"No spouse report for {personal_details}")
+                print(f"No spouse report for {personal_details}")
+                raise HTTPException(status_code=400, detail="Spouse 106 document is required for married status.")
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as spouse_tmp:
+                    spouse_content = await spouse_file.read()
+                    spouse_tmp.write(spouse_content)
+                    spouse_tmp_path = spouse_tmp.name
+            except Exception as e:
+                logger.debug(e)
+                print(e)
+                raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
+
+            personal_details_dict['spouse'] = {
+                'gender': spouse_gender,
+                'dob': {'month': spouse_dob_month, 'year': spouse_dob_year}
+            }
+            personal_details = PersonalDetails(**personal_details_dict)
+            spouse_report_106_codes = parse_106_pdf(spouse_tmp_path)
+            # Merge or handle both report_106_codes and spouse_report_106_codes as needed
+            # For now, just add to personal_details for downstream logic
+    except Exception as e:
+        logger.debug(e)
+        print(e)
+        raise HTTPException(status_code=400, detail=f"Invalid input data: {e}")
 
     simulator = TaxSimulator(year_suffix=str(tax_year)[-2:])
     try:
