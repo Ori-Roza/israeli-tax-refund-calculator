@@ -23,7 +23,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     client_ip = request.client.host if request.client else "unknown"
-    logger.info(f"Homepage accessed from IP: {client_ip}")
+    logger.debug(f"Homepage accessed from IP: {client_ip}")
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/check_tax_refund")
@@ -46,7 +46,7 @@ async def check_tax_refund(
             tmp.write(content)
             tmp_path = tmp.name
     except Exception as e:
-        logger.error(e)
+        logger.debug(e)
         raise HTTPException(status_code=400, detail=f"Failed to save file: {e}")
 
     personal_details_dict = {
@@ -60,7 +60,7 @@ async def check_tax_refund(
     spouse_report_106_codes: Optional[Report106Codes] = None
     if family_status == FamilyStatus.MARRIED:
         if not spouse_file:
-            logger.info(f"No spouse report for {personal_details}")
+            logger.debug(f"No spouse report for {personal_details}")
             raise HTTPException(status_code=400, detail="Spouse 106 document is required for married status.")
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as spouse_tmp:
@@ -68,7 +68,7 @@ async def check_tax_refund(
                 spouse_tmp.write(spouse_content)
                 spouse_tmp_path = spouse_tmp.name
         except Exception as e:
-            logger.error(e)
+            logger.debug(e)
             raise HTTPException(status_code=400, detail=f"Failed to save spouse file: {e}")
 
         personal_details_dict['spouse'] = {
@@ -84,6 +84,6 @@ async def check_tax_refund(
     try:
         result = simulator.calculate_refund(personal_details, report_106_codes, spouse_report_106_codes)
     except Exception as e:
-        logger.error(e)
+        logger.debug(e)
         raise HTTPException(status_code=500, detail=f"Calculation failed: {e}")
     return JSONResponse(content={"result": result.model_dump() if result else None})
